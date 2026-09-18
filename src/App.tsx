@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -115,20 +116,23 @@ function Toggle({ checked, loading, onChange }: { checked: boolean; loading: boo
       disabled={loading}
       aria-checked={checked}
       role="switch"
+      className="press"
       style={{
         width: 40, height: 22, borderRadius: 11, padding: 2, border: 'none',
         cursor: loading ? 'not-allowed' : 'pointer',
         background: checked ? '#00A6E6' : '#203752',
         position: 'relative', display: 'inline-flex', alignItems: 'center',
-        transition: 'background 200ms ease', flexShrink: 0,
+        transition: 'background 260ms cubic-bezier(0.22,1,0.36,1)', flexShrink: 0,
         opacity: loading ? 0.7 : 1,
+        boxShadow: checked ? '0 0 0 1px rgba(0,166,230,0.4), 0 0 12px rgba(0,166,230,0.25)' : 'none',
       }}
     >
-      <span style={{
+      <span key={checked ? 'on' : 'off'} style={{
         width: 18, height: 18, borderRadius: '50%', background: '#F8FAFC',
         transform: checked ? 'translateX(18px)' : 'translateX(0)',
-        transition: 'transform 200ms ease', display: 'flex', alignItems: 'center',
+        transition: 'transform 260ms cubic-bezier(0.34,1.56,0.64,1)', display: 'flex', alignItems: 'center',
         justifyContent: 'center', flexShrink: 0,
+        animation: loading ? 'none' : 'thumb-pop 260ms ease',
       }}>
         {loading && (
           <svg width="10" height="10" viewBox="0 0 24 24" style={{ animation: 'spin 0.7s linear infinite' }}>
@@ -149,7 +153,7 @@ function ToastContainer({ toasts, onRemove, inset }: { toasts: Toast[]; onRemove
       position: inset ? 'absolute' : 'fixed',
       top: inset ? 16 : 20,
       right: inset ? 8 : 20,
-      zIndex: 9999,
+      zIndex: 9999, pointerEvents: 'auto',
       display: 'flex', flexDirection: 'column', gap: 8,
       maxWidth: inset ? 'calc(100% - 16px)' : 360,
       width: inset ? 'calc(100% - 16px)' : 'calc(100vw - 40px)',
@@ -168,7 +172,7 @@ function ToastContainer({ toasts, onRemove, inset }: { toasts: Toast[]; onRemove
             boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
           }}
         >
-          <span style={{ flexShrink: 0, color: t.type === 'success' ? '#8CDD2D' : '#F05252' }}>
+          <span className="check-pop" style={{ flexShrink: 0, display: 'flex', color: t.type === 'success' ? '#8CDD2D' : '#F05252' }}>
             {t.type === 'success' ? <IconCheck /> : <IconAlertTriangle />}
           </span>
           <span style={{ flex: 1, color: '#F8FAFC', lineHeight: 1.4 }}>{t.message}</span>
@@ -187,19 +191,20 @@ function ConfirmModal({ user, onConfirm, onCancel, inset }: { user: User; onConf
   return (
     <div
       onClick={onCancel}
+      className="backdrop-in"
       style={{
         position: inset ? 'absolute' : 'fixed', inset: 0, zIndex: 8000,
         background: 'rgba(7,20,38,0.85)', display: 'flex', alignItems: 'center',
-        justifyContent: 'center', padding: 16, backdropFilter: 'blur(4px)',
+        justifyContent: 'center', padding: 16, backdropFilter: 'blur(4px)', pointerEvents: 'auto',
       }}
     >
-      <div onClick={e => e.stopPropagation()} style={{
+      <div onClick={e => e.stopPropagation()} className="dialog-in" style={{
         background: '#0D1D33', border: '1px solid #203752', borderRadius: 12,
         padding: 24, maxWidth: 380, width: '100%',
         boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-          <span style={{ color: '#F05252', display: 'flex' }}>
+          <span className="check-pop" style={{ color: '#F05252', display: 'flex' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
               <path d="M12 9v4"/><path d="M12 17h.01"/>
@@ -212,13 +217,13 @@ function ConfirmModal({ user, onConfirm, onCancel, inset }: { user: User; onConf
         </p>
         <p style={{ fontSize: 13, color: '#F8FAFC', marginBottom: 20, fontWeight: 500 }}>{user.name}</p>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button onClick={onCancel} style={{
+          <button onClick={onCancel} className="press" style={{
             padding: '7px 16px', borderRadius: 6, border: '1px solid #203752',
             background: 'transparent', color: '#94A3B8', fontSize: 13, fontWeight: 500, cursor: 'pointer',
           }}>
             Cancelar
           </button>
-          <button onClick={onConfirm} style={{
+          <button onClick={onConfirm} className="press" style={{
             padding: '7px 16px', borderRadius: 6, border: '1px solid rgba(240,82,82,0.4)',
             background: 'rgba(240,82,82,0.12)', color: '#F05252', fontSize: 13, fontWeight: 600, cursor: 'pointer',
           }}>
@@ -249,10 +254,9 @@ function StatusDot({ status }: { status: UserStatus }) {
   const active = status === 'Ativo'
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-      <span style={{
+      <span className={active ? 'dot-live' : undefined} style={{
         width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
         background: active ? '#8CDD2D' : '#94A3B8',
-        boxShadow: active ? '0 0 5px rgba(140,221,45,0.5)' : 'none',
       }}/>
       <span style={{ fontSize: 13, color: active ? '#8CDD2D' : '#94A3B8', fontWeight: 500 }}>{status}</span>
     </span>
@@ -335,13 +339,13 @@ function Pagination({
 
   if (isMobile) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', gap: 8 }}>
-      <button disabled={page === 1} onClick={() => onPage(page - 1)} style={{ ...btn(false, page === 1), padding: '0 10px', gap: 4, fontSize: 12 }}>
+      <button className="page-btn" disabled={page === 1} onClick={() => onPage(page - 1)} style={{ ...btn(false, page === 1), padding: '0 10px', gap: 4, fontSize: 12 }}>
         <IconChevronLeft /> Anterior
       </button>
       <span style={{ fontSize: 12, color: '#94A3B8' }}>
-        Página <span style={{ color: '#F8FAFC', fontWeight: 600 }}>{page}</span> de {totalPages}
+        Página <span key={page} className="count-flash" style={{ color: '#F8FAFC', fontWeight: 600, display: 'inline-block' }}>{page}</span> de {totalPages}
       </span>
-      <button disabled={page === totalPages} onClick={() => onPage(page + 1)} style={{ ...btn(false, page === totalPages), padding: '0 10px', gap: 4, fontSize: 12 }}>
+      <button className="page-btn" disabled={page === totalPages} onClick={() => onPage(page + 1)} style={{ ...btn(false, page === totalPages), padding: '0 10px', gap: 4, fontSize: 12 }}>
         Próxima <IconChevronRight />
       </button>
     </div>
@@ -364,15 +368,15 @@ function Pagination({
         </select>
       </div>
       <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-        <button disabled={page === 1} onClick={() => onPage(page - 1)} style={btn(false, page === 1)} title="Anterior">
+        <button className="page-btn" disabled={page === 1} onClick={() => onPage(page - 1)} style={btn(false, page === 1)} title="Anterior">
           <IconChevronLeft />
         </button>
         {pageNums.map((p, i) =>
           p === '...'
             ? <span key={`e${i}`} style={{ color: '#94A3B8', padding: '0 4px', fontSize: 13 }}>…</span>
-            : <button key={p} onClick={() => onPage(p)} style={btn(p === page)}>{p}</button>
+            : <button key={p} className="page-btn" onClick={() => onPage(p)} style={btn(p === page)}>{p}</button>
         )}
-        <button disabled={page === totalPages} onClick={() => onPage(page + 1)} style={btn(false, page === totalPages)} title="Próxima">
+        <button className="page-btn" disabled={page === totalPages} onClick={() => onPage(page + 1)} style={btn(false, page === totalPages)} title="Próxima">
           <IconChevronRight />
         </button>
       </div>
@@ -382,7 +386,7 @@ function Pagination({
 
 // ─── User Management Screen ───────────────────────────────────────────────────
 
-function UserManagementScreen({ forceMobile = false }: { forceMobile?: boolean }) {
+function UserManagementScreen({ forceMobile = false, overlayHost }: { forceMobile?: boolean; overlayHost?: HTMLElement | null }) {
   const [users, setUsers] = useState<User[]>([])
   const [loadState, setLoadState] = useState<'loading' | 'error' | 'ready'>('loading')
 
@@ -486,7 +490,7 @@ function UserManagementScreen({ forceMobile = false }: { forceMobile?: boolean }
   const inputStyle: React.CSSProperties = {
     background: '#11243D', border: '1px solid #203752', borderRadius: 8,
     color: '#F8FAFC', fontSize: 14, padding: '8px 12px', outline: 'none',
-    transition: 'border-color 150ms', width: '100%',
+    transition: 'border-color 160ms ease, box-shadow 160ms ease', width: '100%',
   }
   const selectStyle: React.CSSProperties = { ...inputStyle, cursor: 'pointer' }
 
@@ -504,28 +508,28 @@ function UserManagementScreen({ forceMobile = false }: { forceMobile?: boolean }
           type="text" placeholder="Buscar por nome ou e-mail…" value={search}
           onChange={e => { setSearch(e.target.value); resetPage() }}
           style={{ ...inputStyle, paddingLeft: 34 }}
-          onFocus={e => (e.target as HTMLInputElement).style.borderColor = '#00A6E6'}
-          onBlur={e => (e.target as HTMLInputElement).style.borderColor = '#203752'}
+          onFocus={e => { const s = (e.target as HTMLInputElement).style; s.borderColor = '#00A6E6'; s.boxShadow = '0 0 0 3px rgba(0,166,230,0.12)' }}
+          onBlur={e => { const s = (e.target as HTMLInputElement).style; s.borderColor = '#203752'; s.boxShadow = 'none' }}
         />
       </div>
       <select value={profileFilter} onChange={e => { setProfileFilter(e.target.value as Profile | ''); resetPage() }} style={selectStyle}
-        onFocus={e => (e.target as HTMLSelectElement).style.borderColor = '#00A6E6'}
-        onBlur={e => (e.target as HTMLSelectElement).style.borderColor = '#203752'}>
+        onFocus={e => { const s = (e.target as HTMLSelectElement).style; s.borderColor = '#00A6E6'; s.boxShadow = '0 0 0 3px rgba(0,166,230,0.12)' }}
+        onBlur={e => { const s = (e.target as HTMLSelectElement).style; s.borderColor = '#203752'; s.boxShadow = 'none' }}>
         <option value="">Todos os perfis</option>
         <option value="Administrador">Administrador</option>
         <option value="Gestor Público">Gestor Público</option>
         <option value="Pesquisador">Pesquisador</option>
       </select>
       <select value={municipalityFilter} onChange={e => { setMunicipalityFilter(e.target.value); resetPage() }} style={selectStyle}
-        onFocus={e => (e.target as HTMLSelectElement).style.borderColor = '#00A6E6'}
-        onBlur={e => (e.target as HTMLSelectElement).style.borderColor = '#203752'}>
+        onFocus={e => { const s = (e.target as HTMLSelectElement).style; s.borderColor = '#00A6E6'; s.boxShadow = '0 0 0 3px rgba(0,166,230,0.12)' }}
+        onBlur={e => { const s = (e.target as HTMLSelectElement).style; s.borderColor = '#203752'; s.boxShadow = 'none' }}>
         <option value="">Todos os municípios</option>
         {MUNICIPALITIES.map(m => <option key={m} value={m}>{m}</option>)}
         <option value="__nenhum">Não se aplica</option>
       </select>
       <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value as UserStatus | ''); resetPage() }} style={selectStyle}
-        onFocus={e => (e.target as HTMLSelectElement).style.borderColor = '#00A6E6'}
-        onBlur={e => (e.target as HTMLSelectElement).style.borderColor = '#203752'}>
+        onFocus={e => { const s = (e.target as HTMLSelectElement).style; s.borderColor = '#00A6E6'; s.boxShadow = '0 0 0 3px rgba(0,166,230,0.12)' }}
+        onBlur={e => { const s = (e.target as HTMLSelectElement).style; s.borderColor = '#203752'; s.boxShadow = 'none' }}>
         <option value="">Todos os status</option>
         <option value="Ativo">Ativo</option>
         <option value="Inativo">Inativo</option>
@@ -539,7 +543,7 @@ function UserManagementScreen({ forceMobile = false }: { forceMobile?: boolean }
       <div style={{ textAlign: 'center', padding: '40px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
         <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#F05252" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <p style={{ color: '#94A3B8', fontSize: 13 }}>Erro ao carregar usuários.</p>
-        <button onClick={handleRetry} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 6, border: '1px solid #203752', background: '#11243D', color: '#F8FAFC', fontSize: 13, cursor: 'pointer' }}>
+        <button onClick={handleRetry} className="press" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 6, border: '1px solid #203752', background: '#11243D', color: '#F8FAFC', fontSize: 13, cursor: 'pointer' }}>
           <IconRefresh /> Tentar novamente
         </button>
       </div>
@@ -549,17 +553,17 @@ function UserManagementScreen({ forceMobile = false }: { forceMobile?: boolean }
         <IconEmptyBox />
         <p style={{ color: '#94A3B8', fontSize: 13 }}>{hasFilters ? 'Nenhum usuário encontrado.' : 'Nenhum usuário cadastrado.'}</p>
         {hasFilters && (
-          <button onClick={clearFilters} style={{ padding: '8px 16px', borderRadius: 6, border: '1px solid #00A6E6', background: 'rgba(0,166,230,0.1)', color: '#00A6E6', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+          <button onClick={clearFilters} className="press cta-glow" style={{ padding: '8px 16px', borderRadius: 6, border: '1px solid #00A6E6', background: 'rgba(0,166,230,0.1)', color: '#00A6E6', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             Limpar filtros
           </button>
         )}
       </div>
     )
-    return paginated.map(user => (
-      <div key={user.id} style={{
+    return paginated.map((user, i) => (
+      <div key={user.id} className="user-card" style={{
         background: '#0D1D33', border: '1px solid #203752', borderRadius: 10,
         padding: 16, display: 'flex', flexDirection: 'column', gap: 10,
-        transition: 'border-color 150ms',
+        animationDelay: `${Math.min(i, 12) * 45}ms`,
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -591,7 +595,7 @@ function UserManagementScreen({ forceMobile = false }: { forceMobile?: boolean }
         <div style={{ textAlign: 'center', padding: '60px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#F05252" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           <p style={{ color: '#94A3B8', fontSize: 14, margin: 0 }}>Erro ao carregar usuários.</p>
-          <button onClick={handleRetry} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 20px', borderRadius: 6, border: '1px solid #203752', background: '#11243D', color: '#F8FAFC', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+          <button onClick={handleRetry} className="press" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 20px', borderRadius: 6, border: '1px solid #203752', background: '#11243D', color: '#F8FAFC', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             <IconRefresh /> Tentar novamente
           </button>
         </div>
@@ -605,16 +609,17 @@ function UserManagementScreen({ forceMobile = false }: { forceMobile?: boolean }
             {hasFilters ? 'Nenhum usuário encontrado para os filtros selecionados.' : 'Nenhum usuário cadastrado.'}
           </p>
           {hasFilters && (
-            <button onClick={clearFilters} style={{ padding: '8px 20px', borderRadius: 6, border: '1px solid #00A6E6', background: 'rgba(0,166,230,0.1)', color: '#00A6E6', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <button onClick={clearFilters} className="press cta-glow" style={{ padding: '8px 20px', borderRadius: 6, border: '1px solid #00A6E6', background: 'rgba(0,166,230,0.1)', color: '#00A6E6', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               Limpar filtros
             </button>
           )}
         </div>
       </td></tr>
     )
-    return paginated.map(user => (
+    return paginated.map((user, i) => (
       <tr key={user.id}
-        style={{ borderBottom: '1px solid #203752', transition: 'background 150ms' }}
+        className="data-row"
+        style={{ borderBottom: '1px solid #203752', animationDelay: `${Math.min(i, 12) * 35}ms` }}
         onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#0D2540'}
         onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
       >
@@ -630,19 +635,23 @@ function UserManagementScreen({ forceMobile = false }: { forceMobile?: boolean }
     ))
   }
 
+  // When embedded in the phone frame, overlays must anchor to the visible screen
+  // (a fixed, non-scrolling host) rather than the tall scrolling content.
+  const portal = (node: React.ReactNode) => (overlayHost ? createPortal(node, overlayHost) : node)
+
   return (
     <div style={{ minHeight: '100%', background: '#071426', color: '#F8FAFC', fontFamily: "'Inter', system-ui, sans-serif", position: 'relative' }}>
-      <ToastContainer toasts={toasts} onRemove={removeToast} inset={forceMobile} />
-      {confirmUser && <ConfirmModal user={confirmUser} onConfirm={() => performToggle(confirmUser)} onCancel={() => setConfirmUser(null)} inset={forceMobile} />}
+      {portal(<ToastContainer toasts={toasts} onRemove={removeToast} inset={forceMobile} />)}
+      {confirmUser && portal(<ConfirmModal user={confirmUser} onConfirm={() => performToggle(confirmUser)} onCancel={() => setConfirmUser(null)} inset={forceMobile} />)}
 
       {/* Mobile Filter Bottom Sheet */}
-      {showFilterSheet && isMobile && (
+      {showFilterSheet && isMobile && portal(
         <>
           <div onClick={() => setShowFilterSheet(false)} style={{
-            position: 'absolute', inset: 0, background: 'rgba(7,20,38,0.7)', zIndex: 7000, backdropFilter: 'blur(2px)',
+            position: 'absolute', inset: 0, background: 'rgba(7,20,38,0.7)', zIndex: 7000, backdropFilter: 'blur(2px)', pointerEvents: 'auto',
           }}/>
           <div className="sheet-enter" style={{
-            position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 7100,
+            position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 7100, pointerEvents: 'auto',
             background: '#0D1D33', borderTop: '1px solid #203752',
             borderRadius: '16px 16px 0 0', padding: '20px 16px 32px',
           }}>
@@ -655,11 +664,11 @@ function UserManagementScreen({ forceMobile = false }: { forceMobile?: boolean }
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>{filterPanel}</div>
             <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
               {hasFilters && (
-                <button onClick={() => { clearFilters(); setShowFilterSheet(false) }} style={{ flex: 1, padding: '10px', borderRadius: 8, border: '1px solid #203752', background: 'transparent', color: '#94A3B8', fontSize: 14, cursor: 'pointer' }}>
+                <button onClick={() => { clearFilters(); setShowFilterSheet(false) }} className="press" style={{ flex: 1, padding: '10px', borderRadius: 8, border: '1px solid #203752', background: 'transparent', color: '#94A3B8', fontSize: 14, cursor: 'pointer' }}>
                   Limpar filtros
                 </button>
               )}
-              <button onClick={() => setShowFilterSheet(false)} style={{ flex: 1, padding: '10px', borderRadius: 8, border: '1px solid #00A6E6', background: 'rgba(0,166,230,0.12)', color: '#00A6E6', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+              <button onClick={() => setShowFilterSheet(false)} className="press cta-glow" style={{ flex: 1, padding: '10px', borderRadius: 8, border: '1px solid #00A6E6', background: 'rgba(0,166,230,0.12)', color: '#00A6E6', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
                 Aplicar
               </button>
             </div>
@@ -669,7 +678,7 @@ function UserManagementScreen({ forceMobile = false }: { forceMobile?: boolean }
 
       <div style={{ maxWidth: isMobile ? undefined : 1200, margin: '0 auto', padding: isMobile ? '24px 16px' : '36px 32px' }}>
         {/* Header */}
-        <div style={{ marginBottom: 28 }}>
+        <div className="fade-in" style={{ marginBottom: 28 }}>
           <h1 style={{ fontSize: isMobile ? 20 : 26, fontWeight: 700, color: '#F8FAFC', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
             Gestão de Usuários
           </h1>
@@ -679,9 +688,9 @@ function UserManagementScreen({ forceMobile = false }: { forceMobile?: boolean }
         </div>
 
         {/* Filters */}
-        <div style={{ background: '#0D1D33', border: '1px solid #203752', borderRadius: 10, padding: isMobile ? 14 : 16, marginBottom: 14 }}>
+        <div className="fade-in" style={{ background: '#0D1D33', border: '1px solid #203752', borderRadius: 10, padding: isMobile ? 14 : 16, marginBottom: 14, animationDelay: '60ms' }}>
           {isMobile ? (
-            <button onClick={() => setShowFilterSheet(true)} style={{
+            <button onClick={() => setShowFilterSheet(true)} className="filter-trigger" style={{
               width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               background: '#11243D', border: '1px solid #203752', borderRadius: 8,
               padding: '10px 14px', color: '#F8FAFC', fontSize: 14, cursor: 'pointer',
@@ -689,26 +698,27 @@ function UserManagementScreen({ forceMobile = false }: { forceMobile?: boolean }
               <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <IconFilter /> Filtros
                 {hasFilters && (
-                  <span style={{ background: '#00A6E6', color: '#071426', borderRadius: 10, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>
+                  <span key={chips.length} className="chip-in" style={{ background: '#00A6E6', color: '#071426', borderRadius: 10, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>
                     {chips.length}
                   </span>
                 )}
               </span>
-              <IconChevronRight />
+              <span className="chevron-nudge" style={{ display: 'flex' }}><IconChevronRight /></span>
             </button>
           ) : filterPanel}
 
           {chips.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12, alignItems: 'center' }}>
               {chips.map((chip, i) => (
-                <span key={i} style={{
+                <span key={chip.label} className="chip-in" style={{
                   display: 'inline-flex', alignItems: 'center', gap: 5,
                   background: 'rgba(0,166,230,0.1)', border: '1px solid rgba(0,166,230,0.3)',
                   color: '#00A6E6', borderRadius: 20, padding: '3px 10px',
                   fontSize: 12, fontWeight: 500,
+                  animationDelay: `${i * 40}ms`,
                 }}>
                   {chip.label}
-                  <button onClick={chip.clear} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#00A6E6', display: 'flex', padding: 0, opacity: 0.7 }}>
+                  <button onClick={chip.clear} className="press" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#00A6E6', display: 'flex', padding: 0, opacity: 0.7 }}>
                     <IconX size={11} />
                   </button>
                 </span>
@@ -727,7 +737,7 @@ function UserManagementScreen({ forceMobile = false }: { forceMobile?: boolean }
           <p style={{ fontSize: 13, color: '#94A3B8', marginBottom: 10 }}>
             {filtered.length === 0
               ? 'Nenhum resultado encontrado'
-              : <><span style={{ color: '#F8FAFC', fontWeight: 600 }}>{filtered.length}</span> usuário{filtered.length !== 1 ? 's' : ''} encontrado{filtered.length !== 1 ? 's' : ''}</>
+              : <><span key={filtered.length} className="count-flash" style={{ color: '#F8FAFC', fontWeight: 600, display: 'inline-block' }}>{filtered.length}</span> usuário{filtered.length !== 1 ? 's' : ''} encontrado{filtered.length !== 1 ? 's' : ''}</>
             }
           </p>
         )}
@@ -778,6 +788,10 @@ function PhoneFrame() {
   const BEZEL = 14
   const RADIUS = 44
   const INNER_RADIUS = RADIUS - BEZEL + 4
+
+  // Non-scrolling host for overlays (modal, toasts, filter sheet), anchored to
+  // the visible phone screen instead of the scrolling content below.
+  const [overlayHost, setOverlayHost] = useState<HTMLDivElement | null>(null)
 
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 24px 60px' }}>
@@ -861,7 +875,7 @@ function PhoneFrame() {
 
           {/* Scrollable screen content */}
           <div style={{ height: PHONE_H - 44 - 34, overflowY: 'auto', overflowX: 'hidden' }}>
-            <UserManagementScreen forceMobile />
+            <UserManagementScreen forceMobile overlayHost={overlayHost} />
           </div>
 
           {/* Home indicator */}
@@ -871,6 +885,9 @@ function PhoneFrame() {
           }}>
             <div style={{ width: 120, height: 4, borderRadius: 2, background: 'rgba(248,250,252,0.25)' }}/>
           </div>
+
+          {/* Overlay host — fixed to the visible screen, sits above scroll content */}
+          <div ref={setOverlayHost} style={{ position: 'absolute', inset: 0, zIndex: 200, pointerEvents: 'none' }} />
         </div>
       </div>
     </div>
@@ -885,6 +902,7 @@ function DeviceToggle({ active, onChange }: { active: 'desktop' | 'mobile'; onCh
     return (
       <button
         onClick={() => onChange(id)}
+        className="press"
         style={{
           display: 'flex', alignItems: 'center', gap: 7,
           padding: '7px 16px', borderRadius: 7,
@@ -892,7 +910,7 @@ function DeviceToggle({ active, onChange }: { active: 'desktop' | 'mobile'; onCh
           border: isActive ? '1px solid rgba(0,166,230,0.4)' : '1px solid transparent',
           color: isActive ? '#00A6E6' : '#94A3B8',
           fontSize: 13, fontWeight: isActive ? 600 : 400,
-          cursor: 'pointer', transition: 'all 150ms',
+          cursor: 'pointer', transition: 'background 150ms, border-color 150ms, color 150ms, transform 140ms cubic-bezier(0.22,1,0.36,1)',
         }}
       >
         {icon} {label}

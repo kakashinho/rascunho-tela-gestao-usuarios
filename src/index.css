@@ -105,3 +105,155 @@ body {
 .font-mono {
   font-family: 'JetBrains Mono', monospace;
 }
+
+/* ─── Microinteractions ──────────────────────────────────────────── */
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Rows / cards entering with a soft rise + fade, staggered */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.rise-in {
+  animation: rise-in 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Panels fading into place */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in {
+  animation: fade-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Modal: backdrop fade + dialog spring */
+@keyframes backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes dialog-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.backdrop-in { animation: backdrop-in 180ms ease forwards; }
+.dialog-in  { animation: dialog-in 260ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+/* Chip pop-in */
+@keyframes chip-in {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.chip-in { animation: chip-in 220ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+/* Table row hover — handled inline, but add a subtle left accent via class */
+.data-row {
+  animation: rise-in 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: background 160ms ease, box-shadow 160ms ease;
+}
+.data-row td { position: relative; }
+.data-row td:first-child::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 2px;
+  background: #00A6E6;
+  transform: scaleY(0);
+  transform-origin: center;
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.data-row:hover td:first-child::before { transform: scaleY(1); }
+
+/* User cards (mobile) */
+.user-card {
+  animation: rise-in 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+}
+.user-card:active { transform: scale(0.985); }
+.user-card:hover {
+  border-color: #2c4a6e !important;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+}
+
+/* Generic pressable buttons — lift on hover, sink on press */
+.press {
+  transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1),
+              filter 140ms ease, background 140ms ease,
+              border-color 140ms ease, box-shadow 140ms ease;
+}
+.press:hover:not(:disabled) { filter: brightness(1.12); }
+.press:active:not(:disabled) { transform: scale(0.94); }
+
+/* Primary CTA — attention pulse + shimmer sweep */
+@keyframes cta-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0,166,230,0.0); }
+  50%      { box-shadow: 0 0 0 4px rgba(0,166,230,0.12); }
+}
+.cta-glow {
+  position: relative;
+  overflow: hidden;
+  animation: cta-pulse 2.6s ease-in-out infinite;
+}
+.cta-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.14) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 600ms ease;
+}
+.cta-glow:hover::after { transform: translateX(120%); }
+
+/* Pagination buttons */
+.page-btn {
+  transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 150ms, background 150ms, color 150ms;
+}
+.page-btn:hover:not(:disabled) {
+  border-color: #00A6E6 !important;
+  color: #00A6E6 !important;
+  transform: translateY(-1px);
+}
+.page-btn:active:not(:disabled) { transform: translateY(0) scale(0.94); }
+
+/* Toggle thumb bounce */
+@keyframes thumb-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.86); }
+  100% { transform: scale(1); }
+}
+
+/* Active status dot heartbeat */
+@keyframes dot-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(140,221,45,0.5); }
+  50%      { box-shadow: 0 0 0 4px rgba(140,221,45,0); }
+}
+.dot-live { animation: dot-pulse 2.4s ease-in-out infinite; }
+
+/* Icon spin-in for success check */
+@keyframes check-pop {
+  from { transform: scale(0) rotate(-30deg); opacity: 0; }
+  to   { transform: scale(1) rotate(0); opacity: 1; }
+}
+.check-pop { animation: check-pop 300ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+/* Count number soft flash on change */
+@keyframes count-flash {
+  from { color: #00A6E6; }
+  to   { color: #F8FAFC; }
+}
+.count-flash { animation: count-flash 500ms ease both; }
+
+/* Chevron nudge inside filter trigger */
+.filter-trigger { transition: border-color 160ms ease, background 160ms ease; }
+.filter-trigger:hover { border-color: #2c4a6e !important; background: #143050 !important; }
+.filter-trigger:hover .chevron-nudge { transform: translateX(3px); }
+.chevron-nudge { transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1); }
