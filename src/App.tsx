@@ -420,6 +420,30 @@ function UserManagementScreen({ forceMobile = false, overlayHost }: { forceMobil
 
   const isMobile = forceMobile || windowMobile
 
+  // Sticky filter: detect when the filter bar reaches the top of its scroll
+  // container so we can lift it with a shadow only while it's "stuck".
+  // Desktop offsets below the fixed device-toggle bar; mobile sticks flush.
+  const stickyTop = isMobile ? 0 : 60
+  const [filterStuck, setFilterStuck] = useState(false)
+  const stickySentinel = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = stickySentinel.current
+    if (!el) return
+    let root: HTMLElement | null = el.parentElement
+    while (root) {
+      const oy = getComputedStyle(root).overflowY
+      if (oy === 'auto' || oy === 'scroll') break
+      root = root.parentElement
+    }
+    const topOffset = isMobile ? 0 : 60
+    const obs = new IntersectionObserver(
+      ([entry]) => setFilterStuck(!entry.isIntersecting),
+      { root, threshold: 1, rootMargin: `${-topOffset}px 0px 0px 0px` },
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [isMobile])
+
   useEffect(() => {
     setLoadState('loading')
     setUsers([])
@@ -688,7 +712,15 @@ function UserManagementScreen({ forceMobile = false, overlayHost }: { forceMobil
         </div>
 
         {/* Filters */}
-        <div className="fade-in" style={{ background: '#0D1D33', border: '1px solid #203752', borderRadius: 10, padding: isMobile ? 14 : 16, marginBottom: 14, animationDelay: '60ms' }}>
+        <div ref={stickySentinel} style={{ height: 1, margin: 0 }} aria-hidden />
+        <div className="fade-in" style={{
+          background: '#0D1D33', border: '1px solid #203752', borderRadius: 10,
+          padding: isMobile ? 14 : 16, marginBottom: 14, animationDelay: '60ms',
+          position: 'sticky', top: stickyTop, zIndex: 50,
+          transition: 'box-shadow 200ms ease, border-color 200ms ease',
+          boxShadow: filterStuck ? '0 8px 24px rgba(0,0,0,0.45)' : 'none',
+          borderColor: filterStuck ? '#2c4a6e' : '#203752',
+        }}>
           {isMobile ? (
             <button onClick={() => setShowFilterSheet(true)} className="filter-trigger" style={{
               width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
