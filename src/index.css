@@ -1,0 +1,107 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --color-bg-base: #071426;
+  --color-surface-1: #0D1D33;
+  --color-surface-2: #11243D;
+  --color-border: #203752;
+  --color-text-primary: #F8FAFC;
+  --color-text-secondary: #94A3B8;
+  --color-cyan: #00A6E6;
+  --color-cyan-hover: #0090CC;
+  --color-turquoise: #22B8B5;
+  --color-lime: #8CDD2D;
+  --color-orange: #F28C28;
+  --color-error: #F05252;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  background-color: #071426;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #F8FAFC;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+  opacity: 0;
+}
+::-webkit-scrollbar-track {
+  background: #071426;
+}
+::-webkit-scrollbar-thumb {
+  background: #203752;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #00A6E6;
+}
+
+/* Focus rings */
+*:focus-visible {
+  outline: 2px solid #00A6E6;
+  outline-offset: 2px;
+}
+
+/* Toggle styles */
+.toggle-track {
+  transition: background-color 200ms ease;
+}
+.toggle-thumb {
+  transition: transform 200ms ease;
+}
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #0D1D33 25%, #11243D 50%, #0D1D33 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+/* Toast slide-in */
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes toast-out {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(100%); }
+}
+.toast-enter {
+  animation: toast-in 200ms ease forwards;
+}
+.toast-exit {
+  animation: toast-out 200ms ease forwards;
+}
+
+/* Bottom sheet */
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.sheet-enter {
+  animation: sheet-up 250ms ease forwards;
+}
+
+/* Mono font for data */
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}

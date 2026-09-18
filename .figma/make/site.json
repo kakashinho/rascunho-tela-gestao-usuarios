@@ -1,0 +1,10 @@
+{
+  "description": "Enables administrators to view, filter, and manage user access with responsive tables, status toggles, and dynamic pagination in a dark mode interface.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
