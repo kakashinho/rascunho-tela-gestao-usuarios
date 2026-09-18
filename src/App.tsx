@@ -99,6 +99,9 @@ function IconRefresh() {
 function IconEmptyBox() {
   return <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#203752" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
 }
+function IconTrash({ size = 16 }: { size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+}
 function IconMonitor() {
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>
 }
@@ -228,6 +231,322 @@ function ConfirmModal({ user, onConfirm, onCancel, inset }: { user: User; onConf
             background: 'rgba(240,82,82,0.12)', color: '#F05252', fontSize: 13, fontWeight: 600, cursor: 'pointer',
           }}>
             Desativar acesso
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Edit User Modal ──────────────────────────────────────────────────────────
+
+function EditUserModal({ user, onSave, onDelete, onCancel, inset }: { user: User; onSave: (u: User) => void; onDelete: (u: User) => void; onCancel: () => void; inset?: boolean }) {
+  const [name, setName] = useState(user.name)
+  const [email, setEmail] = useState(user.email)
+  const [profile, setProfile] = useState<Profile>(user.profile)
+  const [municipality, setMunicipality] = useState<string>(user.municipality ?? '__none')
+  const [status, setStatus] = useState<UserStatus>(user.status)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+  const canSave = name.trim().length > 0 && emailValid
+
+  const labelStyle: React.CSSProperties = { fontSize: 12, fontWeight: 600, color: '#94A3B8', marginBottom: 6, display: 'block', letterSpacing: '0.02em' }
+  const fieldStyle: React.CSSProperties = {
+    background: '#11243D', border: '1px solid #203752', borderRadius: 8,
+    color: '#F8FAFC', fontSize: 14, padding: '9px 12px', outline: 'none', width: '100%',
+    transition: 'border-color 160ms ease, box-shadow 160ms ease',
+  }
+  const onFocus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+    e.target.style.borderColor = '#00A6E6'; e.target.style.boxShadow = '0 0 0 3px rgba(0,166,230,0.12)'
+  }
+  const onBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+    e.target.style.borderColor = '#203752'; e.target.style.boxShadow = 'none'
+  }
+
+  const submit = () => {
+    if (!canSave) return
+    onSave({
+      ...user,
+      name: name.trim(),
+      email: email.trim(),
+      profile,
+      municipality: municipality === '__none' ? null : municipality,
+      status,
+    })
+  }
+
+  return (
+    <div
+      onClick={onCancel}
+      className="backdrop-in"
+      style={{
+        position: inset ? 'absolute' : 'fixed', inset: 0, zIndex: 8000,
+        background: 'rgba(7,20,38,0.85)', display: 'flex', alignItems: 'center',
+        justifyContent: 'center', padding: 16, backdropFilter: 'blur(4px)', pointerEvents: 'auto',
+        overflowY: 'auto',
+      }}
+    >
+      <div onClick={e => e.stopPropagation()} className="dialog-in" style={{
+        background: '#0D1D33', border: '1px solid #203752', borderRadius: 12,
+        padding: 24, maxWidth: 440, width: '100%',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: '#F8FAFC', margin: 0, letterSpacing: '-0.01em' }}>Editar usuário</h2>
+          <button onClick={onCancel} className="press" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', display: 'flex', padding: 2 }}>
+            <IconX size={18} />
+          </button>
+        </div>
+        <p style={{ fontSize: 13, color: '#94A3B8', margin: '0 0 20px' }}>
+          Atualize os dados e o acesso deste usuário.
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <label style={labelStyle}>Nome</label>
+            <input value={name} onChange={e => setName(e.target.value)} style={fieldStyle} onFocus={onFocus} onBlur={onBlur} placeholder="Nome completo" />
+          </div>
+          <div>
+            <label style={labelStyle}>E-mail</label>
+            <input value={email} onChange={e => setEmail(e.target.value)} style={{ ...fieldStyle, fontFamily: '"JetBrains Mono", monospace', fontSize: 13, borderColor: email.trim() && !emailValid ? 'rgba(240,82,82,0.6)' : '#203752' }} onFocus={onFocus} onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = email.trim() && !emailValid ? 'rgba(240,82,82,0.6)' : '#203752' }} placeholder="email@dominio.gov.br" />
+            {email.trim() && !emailValid && (
+              <span style={{ fontSize: 11, color: '#F05252', marginTop: 5, display: 'block' }}>Informe um e-mail válido.</span>
+            )}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={labelStyle}>Perfil</label>
+              <select value={profile} onChange={e => setProfile(e.target.value as Profile)} style={{ ...fieldStyle, cursor: 'pointer' }} onFocus={onFocus} onBlur={onBlur}>
+                <option value="Administrador">Administrador</option>
+                <option value="Gestor Público">Gestor Público</option>
+                <option value="Pesquisador">Pesquisador</option>
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Status</label>
+              <select value={status} onChange={e => setStatus(e.target.value as UserStatus)} style={{ ...fieldStyle, cursor: 'pointer' }} onFocus={onFocus} onBlur={onBlur}>
+                <option value="Ativo">Ativo</option>
+                <option value="Inativo">Inativo</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label style={labelStyle}>Município</label>
+            <select value={municipality} onChange={e => setMunicipality(e.target.value)} style={{ ...fieldStyle, cursor: 'pointer' }} onFocus={onFocus} onBlur={onBlur}>
+              <option value="__none">Não se aplica</option>
+              {MUNICIPALITIES.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {/* Danger zone */}
+        <div style={{ borderTop: '1px solid #203752', margin: '20px 0 0', paddingTop: 16 }}>
+          <button onClick={() => setConfirmingDelete(true)} className="press" title="Excluir usuário" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 7,
+            padding: '8px 14px', borderRadius: 6, border: '1px solid rgba(240,82,82,0.4)',
+            background: 'rgba(240,82,82,0.1)', color: '#F05252', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+          }}>
+            <IconTrash size={15} />
+            <span>Excluir usuário</span>
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
+          <button onClick={onCancel} className="press" style={{
+            padding: '9px 18px', borderRadius: 6, border: '1px solid #203752',
+            background: 'transparent', color: '#94A3B8', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+          }}>
+            Cancelar
+          </button>
+          <button onClick={submit} disabled={!canSave} className="press cta-glow" style={{
+            padding: '9px 18px', borderRadius: 6, border: '1px solid #00A6E6',
+            background: 'rgba(0,166,230,0.15)', color: '#00A6E6', fontSize: 13, fontWeight: 600,
+            cursor: canSave ? 'pointer' : 'not-allowed', opacity: canSave ? 1 : 0.5,
+          }}>
+            Salvar alterações
+          </button>
+        </div>
+      </div>
+
+      {/* Nested delete confirmation */}
+      {confirmingDelete && (
+        <div
+          onClick={e => { e.stopPropagation(); setConfirmingDelete(false) }}
+          className="backdrop-in"
+          style={{
+            position: 'absolute', inset: 0, zIndex: 8600,
+            background: 'rgba(7,20,38,0.9)', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', padding: 16, backdropFilter: 'blur(4px)', pointerEvents: 'auto',
+          }}
+        >
+          <div onClick={e => e.stopPropagation()} className="dialog-in" style={{
+            background: '#0D1D33', border: '1px solid #203752', borderRadius: 12,
+            padding: 24, maxWidth: 400, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <span className="check-pop" style={{ color: '#F05252', display: 'flex' }}>
+                <IconTrash size={18} />
+              </span>
+              <h2 style={{ fontSize: 16, fontWeight: 700, color: '#F8FAFC', margin: 0 }}>Tem certeza que deseja excluir este usuário?</h2>
+            </div>
+            <p style={{ fontSize: 13, color: '#94A3B8', margin: '0 0 6px', lineHeight: 1.5 }}>
+              Esta ação irá <span style={{ color: '#F8FAFC', fontWeight: 500 }}>inativar</span> o usuário e impedir seu acesso ao sistema. Os dados serão preservados.
+            </p>
+            <p style={{ fontSize: 13, color: '#F8FAFC', margin: '0 0 20px', fontWeight: 600 }}>{user.name}</p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button onClick={() => setConfirmingDelete(false)} className="press" style={{
+                padding: '9px 18px', borderRadius: 6, border: '1px solid #203752',
+                background: 'transparent', color: '#94A3B8', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+              }}>
+                Cancelar
+              </button>
+              <button onClick={() => onDelete(user)} className="press" style={{
+                display: 'inline-flex', alignItems: 'center', gap: 7,
+                padding: '9px 18px', borderRadius: 6, border: '1px solid rgba(240,82,82,0.5)',
+                background: 'rgba(240,82,82,0.15)', color: '#F05252', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+              }}>
+                <IconTrash size={15} /> Confirmar exclusão
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Create User Modal ────────────────────────────────────────────────────────
+
+type NewUserData = Omit<User, 'id' | 'lastAccess'>
+
+function CreateUserModal({ onCreate, onCancel, inset }: { onCreate: (u: NewUserData) => void; onCancel: () => void; inset?: boolean }) {
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [profile, setProfile] = useState<Profile | ''>('')
+  const [municipality, setMunicipality] = useState('')
+  const [showErrors, setShowErrors] = useState(false)
+
+  const needsMunicipality = profile === 'Gestor Público'
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+
+  const errors = {
+    name: !name.trim() ? 'Informe o nome completo.' : '',
+    email: !email.trim() ? 'Informe o e-mail institucional.' : !emailValid ? 'E-mail inválido.' : '',
+    password: !password ? 'Defina uma senha inicial.' : password.length < 6 ? 'A senha deve ter ao menos 6 caracteres.' : '',
+    profile: !profile ? 'Selecione um perfil.' : '',
+    municipality: needsMunicipality && !municipality ? 'Município é obrigatório para Gestor Público.' : '',
+  }
+  const hasErrors = Object.values(errors).some(Boolean)
+
+  const labelStyle: React.CSSProperties = { fontSize: 12, fontWeight: 600, color: '#94A3B8', marginBottom: 6, display: 'block', letterSpacing: '0.02em' }
+  const fieldBase: React.CSSProperties = {
+    background: '#11243D', border: '1px solid #203752', borderRadius: 8,
+    color: '#F8FAFC', fontSize: 14, padding: '9px 12px', outline: 'none', width: '100%',
+    transition: 'border-color 160ms ease, box-shadow 160ms ease',
+  }
+  const fieldStyle = (hasError: boolean, extra?: React.CSSProperties): React.CSSProperties => ({
+    ...fieldBase, ...extra,
+    borderColor: hasError ? 'rgba(240,82,82,0.6)' : '#203752',
+  })
+  const onFocus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+    e.target.style.borderColor = '#00A6E6'; e.target.style.boxShadow = '0 0 0 3px rgba(0,166,230,0.12)'
+  }
+  const onBlur = (hasError: boolean) => (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+    e.target.style.boxShadow = 'none'; e.target.style.borderColor = hasError ? 'rgba(240,82,82,0.6)' : '#203752'
+  }
+  const errText = (msg: string) => msg ? <span style={{ fontSize: 11, color: '#F05252', marginTop: 5, display: 'block' }}>{msg}</span> : null
+
+  const submit = () => {
+    setShowErrors(true)
+    if (hasErrors) return
+    // Senha inicial é validada aqui, mas não é persistida no registro mock do usuário.
+    onCreate({
+      name: name.trim(),
+      email: email.trim(),
+      profile: profile as Profile,
+      municipality: needsMunicipality ? municipality : null,
+      status: 'Ativo',
+    })
+  }
+
+  return (
+    <div
+      onClick={onCancel}
+      className="backdrop-in"
+      style={{
+        position: inset ? 'absolute' : 'fixed', inset: 0, zIndex: 8000,
+        background: 'rgba(7,20,38,0.85)', display: 'flex', alignItems: 'center',
+        justifyContent: 'center', padding: 16, backdropFilter: 'blur(4px)', pointerEvents: 'auto',
+        overflowY: 'auto',
+      }}
+    >
+      <div onClick={e => e.stopPropagation()} className="dialog-in" style={{
+        background: '#0D1D33', border: '1px solid #203752', borderRadius: 12,
+        padding: 24, maxWidth: 440, width: '100%',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: '#F8FAFC', margin: 0, letterSpacing: '-0.01em' }}>Novo usuário</h2>
+          <button onClick={onCancel} className="press" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', display: 'flex', padding: 2 }}>
+            <IconX size={18} />
+          </button>
+        </div>
+        <p style={{ fontSize: 13, color: '#94A3B8', margin: '0 0 20px' }}>
+          Preencha os dados para conceder acesso à plataforma.
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <label style={labelStyle}>Nome completo</label>
+            <input value={name} onChange={e => setName(e.target.value)} style={fieldStyle(showErrors && !!errors.name)} onFocus={onFocus} onBlur={onBlur(showErrors && !!errors.name)} placeholder="Ex.: Maria Silva Andrade" />
+            {showErrors && errText(errors.name)}
+          </div>
+          <div>
+            <label style={labelStyle}>E-mail institucional</label>
+            <input value={email} onChange={e => setEmail(e.target.value)} style={fieldStyle(showErrors && !!errors.email, { fontFamily: '"JetBrains Mono", monospace', fontSize: 13 })} onFocus={onFocus} onBlur={onBlur(showErrors && !!errors.email)} placeholder="nome@orgao.gov.br" />
+            {showErrors && errText(errors.email)}
+          </div>
+          <div>
+            <label style={labelStyle}>Senha inicial</label>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} style={fieldStyle(showErrors && !!errors.password)} onFocus={onFocus} onBlur={onBlur(showErrors && !!errors.password)} placeholder="Mínimo de 6 caracteres" />
+            {showErrors && errText(errors.password)}
+          </div>
+          <div>
+            <label style={labelStyle}>Papel / Perfil</label>
+            <select value={profile} onChange={e => setProfile(e.target.value as Profile | '')} style={fieldStyle(showErrors && !!errors.profile, { cursor: 'pointer', color: profile ? '#F8FAFC' : '#94A3B8' })} onFocus={onFocus} onBlur={onBlur(showErrors && !!errors.profile)}>
+              <option value="" disabled>Selecione um perfil…</option>
+              <option value="Administrador">Administrador</option>
+              <option value="Gestor Público">Gestor Público</option>
+              <option value="Pesquisador">Pesquisador</option>
+            </select>
+            {showErrors && errText(errors.profile)}
+          </div>
+          {needsMunicipality && (
+            <div className="fade-in">
+              <label style={labelStyle}>Município <span style={{ color: '#F05252' }}>*</span></label>
+              <select value={municipality} onChange={e => setMunicipality(e.target.value)} style={fieldStyle(showErrors && !!errors.municipality, { cursor: 'pointer', color: municipality ? '#F8FAFC' : '#94A3B8' })} onFocus={onFocus} onBlur={onBlur(showErrors && !!errors.municipality)}>
+                <option value="" disabled>Selecione o município…</option>
+                {MUNICIPALITIES.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+              {showErrors && errText(errors.municipality)}
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 24 }}>
+          <button onClick={onCancel} className="press" style={{
+            padding: '9px 18px', borderRadius: 6, border: '1px solid #203752',
+            background: 'transparent', color: '#94A3B8', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+          }}>
+            Cancelar
+          </button>
+          <button onClick={submit} className="press cta-glow" style={{
+            padding: '9px 18px', borderRadius: 6, border: '1px solid #00A6E6',
+            background: '#00A6E6', color: '#071426', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+          }}>
+            Cadastrar usuário
           </button>
         </div>
       </div>
@@ -400,6 +719,8 @@ function UserManagementScreen({ forceMobile = false, overlayHost }: { forceMobil
 
   const [togglingId, setTogglingId] = useState<number | null>(null)
   const [confirmUser, setConfirmUser] = useState<User | null>(null)
+  const [editUser, setEditUser] = useState<User | null>(null)
+  const [showCreate, setShowCreate] = useState(false)
   const [toasts, setToasts] = useState<Toast[]>([])
   const toastCounter = useRef(0)
   const [showFilterSheet, setShowFilterSheet] = useState(false)
@@ -505,6 +826,27 @@ function UserManagementScreen({ forceMobile = false, overlayHost }: { forceMobil
     }, 900)
   }
 
+  const handleCreate = (data: NewUserData) => {
+    const id = users.reduce((max, u) => Math.max(max, u.id), 0) + 1
+    const newUser: User = { id, ...data, lastAccess: 'Nunca acessou' }
+    setUsers(prev => [newUser, ...prev])
+    setShowCreate(false)
+    setPage(1)
+    addToast('success', `${data.name.split(' ')[0]} foi cadastrado com sucesso.`)
+  }
+
+  const handleSaveEdit = (updated: User) => {
+    setUsers(prev => prev.map(u => u.id === updated.id ? updated : u))
+    setEditUser(null)
+    addToast('success', `${updated.name.split(' ')[0]} foi atualizado com sucesso.`)
+  }
+
+  const handleDeleteUser = (user: User) => {
+    setUsers(prev => prev.map(u => u.id === user.id ? { ...u, status: 'Inativo' } : u))
+    setEditUser(null)
+    addToast('success', `${user.name.split(' ')[0]} foi inativado. Os dados foram preservados.`)
+  }
+
   const handleRetry = () => {
     setLoadState('loading')
     setUsers([])
@@ -584,9 +926,9 @@ function UserManagementScreen({ forceMobile = false, overlayHost }: { forceMobil
       </div>
     )
     return paginated.map((user, i) => (
-      <div key={user.id} className="user-card" style={{
+      <div key={user.id} className="user-card" onClick={() => setEditUser(user)} style={{
         background: '#0D1D33', border: '1px solid #203752', borderRadius: 10,
-        padding: 16, display: 'flex', flexDirection: 'column', gap: 10,
+        padding: 16, display: 'flex', flexDirection: 'column', gap: 10, cursor: 'pointer',
         animationDelay: `${Math.min(i, 12) * 45}ms`,
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
@@ -598,7 +940,9 @@ function UserManagementScreen({ forceMobile = false, overlayHost }: { forceMobil
               {user.email}
             </p>
           </div>
-          <Toggle checked={user.status === 'Ativo'} loading={togglingId === user.id} onChange={() => handleToggle(user)} />
+          <span onClick={e => e.stopPropagation()} style={{ display: 'flex' }}>
+            <Toggle checked={user.status === 'Ativo'} loading={togglingId === user.id} onChange={() => handleToggle(user)} />
+          </span>
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
           <ProfileBadge profile={user.profile} />
@@ -643,7 +987,9 @@ function UserManagementScreen({ forceMobile = false, overlayHost }: { forceMobil
     return paginated.map((user, i) => (
       <tr key={user.id}
         className="data-row"
-        style={{ borderBottom: '1px solid #203752', animationDelay: `${Math.min(i, 12) * 35}ms` }}
+        style={{ borderBottom: '1px solid #203752', animationDelay: `${Math.min(i, 12) * 35}ms`, cursor: 'pointer' }}
+        onClick={() => setEditUser(user)}
+        title="Clique para editar"
         onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#0D2540'}
         onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
       >
@@ -652,7 +998,7 @@ function UserManagementScreen({ forceMobile = false, overlayHost }: { forceMobil
         <td style={{ padding: '13px 16px' }}><ProfileBadge profile={user.profile} /></td>
         <td style={{ padding: '13px 16px', fontSize: 13, color: user.municipality ? '#F8FAFC' : '#94A3B8', whiteSpace: 'nowrap' }}>{user.municipality ?? 'Não se aplica'}</td>
         <td style={{ padding: '13px 16px' }}><StatusDot status={user.status} /></td>
-        <td style={{ padding: '13px 16px' }}>
+        <td style={{ padding: '13px 16px' }} onClick={e => e.stopPropagation()}>
           <Toggle checked={user.status === 'Ativo'} loading={togglingId === user.id} onChange={() => handleToggle(user)} />
         </td>
       </tr>
@@ -667,6 +1013,8 @@ function UserManagementScreen({ forceMobile = false, overlayHost }: { forceMobil
     <div style={{ minHeight: '100%', background: '#071426', color: '#F8FAFC', fontFamily: "'Inter', system-ui, sans-serif", position: 'relative' }}>
       {portal(<ToastContainer toasts={toasts} onRemove={removeToast} inset={forceMobile} />)}
       {confirmUser && portal(<ConfirmModal user={confirmUser} onConfirm={() => performToggle(confirmUser)} onCancel={() => setConfirmUser(null)} inset={forceMobile} />)}
+      {editUser && portal(<EditUserModal user={editUser} onSave={handleSaveEdit} onDelete={handleDeleteUser} onCancel={() => setEditUser(null)} inset={forceMobile} />)}
+      {showCreate && portal(<CreateUserModal onCreate={handleCreate} onCancel={() => setShowCreate(false)} inset={forceMobile} />)}
 
       {/* Mobile Filter Bottom Sheet */}
       {showFilterSheet && isMobile && portal(
@@ -702,13 +1050,30 @@ function UserManagementScreen({ forceMobile = false, overlayHost }: { forceMobil
 
       <div style={{ maxWidth: isMobile ? undefined : 1200, margin: '0 auto', padding: isMobile ? '24px 16px' : '36px 32px' }}>
         {/* Header */}
-        <div className="fade-in" style={{ marginBottom: 28 }}>
-          <h1 style={{ fontSize: isMobile ? 20 : 26, fontWeight: 700, color: '#F8FAFC', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
-            Gestão de Usuários
-          </h1>
-          <p style={{ fontSize: isMobile ? 13 : 14, color: '#94A3B8', margin: 0 }}>
-            Visualize, filtre e controle o acesso dos usuários.
-          </p>
+        <div className="fade-in" style={{
+          marginBottom: 28, display: 'flex', gap: 16,
+          flexDirection: isMobile ? 'column' : 'row',
+          alignItems: isMobile ? 'stretch' : 'flex-start',
+          justifyContent: 'space-between',
+        }}>
+          <div>
+            <h1 style={{ fontSize: isMobile ? 20 : 26, fontWeight: 700, color: '#F8FAFC', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+              Gestão de Usuários
+            </h1>
+            <p style={{ fontSize: isMobile ? 13 : 14, color: '#94A3B8', margin: 0 }}>
+              Visualize, filtre e controle o acesso dos usuários.
+            </p>
+          </div>
+          <button onClick={() => setShowCreate(true)} className="press cta-glow" style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+            padding: '10px 16px', borderRadius: 8, border: '1px solid #00A6E6',
+            background: '#00A6E6', color: '#071426', fontSize: 14, fontWeight: 700,
+            cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+            width: isMobile ? '100%' : undefined,
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            Novo usuário
+          </button>
         </div>
 
         {/* Filters */}
